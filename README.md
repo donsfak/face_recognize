@@ -73,3 +73,5 @@ cd face_recognize
 
 5. Lancement du serveur de développement
   - uvicorn app:app --host 127.0.0.1 --port 8001 --reload
+
+## 🐳 Déploiement en Production (Docker)
