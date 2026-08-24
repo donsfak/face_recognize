@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Personnes — FaceGuard{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Personnes enregistrées</h1>
+        <p class="page-sub">{{ people|length }} personne(s) dans la base de reconnaissance</p>
+    </div>
+    <a href="{{ url_for('people_add') }}" class="btn btn-primary">+ Ajouter une personne</a>
+</header>
+
+{% if people %}
+<div class="people-grid">
+    {% for person in people %}
+    <div class="person-card">
+        <div class="person-avatar">{{ person.name[0]|upper }}</div>
+        <div class="person-info">
+            <span class="person-name">{{ person.name }}</span>
+            <span class="person-count">{{ person.photo_count }} photo(s)</span>
+        </div>
+        <form method="POST" action="{{ url_for('people_delete', name=person.name) }}"
+              onsubmit="return confirm('Supprimer {{ person.name }} de la base de reconnaissance ?');">
+            <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Aucune personne enregistrée pour l'instant.</p>
+    <a href="{{ url_for('people_add') }}" class="btn btn-primary">Ajouter la première personne</a>
+</div>
+{% endif %}
+{% endblock %}

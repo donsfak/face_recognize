@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrôlement Multi-Captures - IA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 40px;
+            color: #334155;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e293b; font-size: 22px; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .camera-box {
+            position: relative;
+            width: 100%;
+            height: 360px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover { background-color: #1d4ed8; }
+        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .back-link { display: inline-block; margin-top: 20px; color: #64748b; text-decoration: none; text-align: center; width: 100%; }
+        #message { margin-top: 15px; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>➕ Enrôlement Intelligent (5 Captures)</h1>
+        
+        <div class="form-group">
+            <label for="name">Nom complet de la personne :</label>
+            <input type="text" id="name" required placeholder="Ex: Jean Kouadio">
+        </div>
+
+        <div class="form-group">
+            <label>Flux de la caméra :</label>
+            <div class="camera-box">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display:none;"></canvas>
+            </div>
+            <button type="button" id="startBtn" class="btn">🚀 Lancer les 5 captures automatiques</button>
+        </div>
+
+        <p id="message"></p>
+        <a href="/" class="back-link">← Retour au Dashboard</a>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('startBtn');
+        const nameInput = document.getElementById('name');
+        const message = document.getElementById('message');
+
+        // Allumage de la webcam
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                message.style.color = "red";
+                message.innerText = "Erreur d'accès à la webcam : " + err.message;
+            });
+
+        startBtn.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert("Veuillez saisir un nom complet avant de lancer les captures.");
+                nameInput.focus();
+                return;
+            }
+
+            startBtn.setAttribute('disabled', 'true');
+            const blobs = [];
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Séquence de 5 captures espacées de 800 millisecondes
+            for (let i = 1; i <= 5; i++) {
+                message.style.color = "#d97706";
+                message.innerText = `📸 Capture ${i} sur 5 en cours... (Bougez légèrement)`;
+                
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                await new Promise(resolve => {
+                    canvas.toBlob((blob) => {
+                        blobs.push(blob);
+                        setTimeout(resolve, 800); // Pause de 800ms entre chaque photo
+                    }, 'image/jpeg', 0.9);
+                });
+            }
+
+            message.innerText = "Envoi des 5 captures et extraction des embeddings par l'IA...";
+
+            const formData = new FormData();
+            formData.append('name', name);
+            blobs.forEach((blob, index) => {
+                formData.append('files', blob, `capture_${index}.jpg`);
+            });
+
+            try {
+                const response = await registerUserAPI(formData);
+                message.style.color = "green";
+                message.innerText = response.message;
+                nameInput.value = "";
+            } catch (err) {
+                message.style.color = "red";
+                message.innerText = "Erreur : " + err.message;
+            } finally {
+                startBtn.removeAttribute('disabled');
+            }
+        });
+
+        async function registerUserAPI(formData) {
+            const response = await fetch('/register-user', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.detail || "Erreur serveur");
+            return result;
+        }
+    </script>
+</body>
+</html>

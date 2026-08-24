@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner IA - Contrôle d'accès</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .camera-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background-color: #000;
+        }
+        /* On superpose exactement le canvas (dessins IA) sur la vidéo */
+        #videoElement, #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 640px;
+            height: 480px;
+        }
+        #overlayCanvas {
+            z-index: 10;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Terminal de Pointage IA</h1>
+    
+    <div class="camera-container">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="overlayCanvas" width="640" height="480"></canvas>
+    </div>
+    
+    <p id="status">Initialisation de la caméra...</p>
+
+    <!-- Chargement du script qui gère les WebSockets -->
+    <script src="/static/camera.js"></script>
+</body>
+</html>

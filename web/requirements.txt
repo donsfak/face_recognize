@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+supabase
+websockets
+opencv-python-headless
+faiss-cpu
+insightface
+onnxruntime
+numpy
+python-dotenv

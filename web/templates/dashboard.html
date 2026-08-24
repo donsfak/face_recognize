@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Contrôle d'Accès IA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 40px;
+            color: #334155;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        h1 { margin: 0; color: #1e293b; font-size: 24px; }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #1d4ed8; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th, td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+        }
+        tr:hover { background-color: #f8fafc; }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-vivant { background-color: #dcfce7; color: #166534; }
+        .badge-spoof { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Historique des Pointages (Supabase)</h1>
+            <a href="/scanner" class="btn">📷 Ouvrir le Scanner Live</a>
+	   <a href="/register" class="btn" style="background-color: #10b981; margin-right: 10px;">➕ Ajouter une personne</a>
+        </header>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Utilisateur</th>
+                        <th>Statut Sécurité</th>
+                        <th>Score de Similarité</th>
+                        <th>Horodatage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if logs %}
+                        {% for log in logs %}
+                        <tr>
+                            <td>#{{ log.id }}</td>
+                            <td><strong>{{ log.user_name }}</strong></td>
+                            <td>
+                                {% if "VIVANT" in log.liveness_status %}
+                                    <span class="badge badge-vivant">{{ log.liveness_status }}</span>
+                                {% else %}
+                                    <span class="badge badge-spoof">{{ log.liveness_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ "%.2f"|format(log.confidence_score) }}</td>
+                            <td>{{ log.timestamp }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
+                                Aucun pointage enregistré pour le moment. Lancez le scanner pour tester !
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
