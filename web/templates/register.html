@@ -1,169 +1,175 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enrôlement Multi-Captures - IA</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 40px;
-            color: #334155;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            max-width: 600px;
-            width: 100%;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        h1 { color: #1e293b; font-size: 22px; margin-bottom: 20px; text-align: center; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
-        .camera-box {
-            position: relative;
-            width: 100%;
-            height: 360px;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .btn {
-            background-color: #2563eb;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-        }
-        .btn:hover { background-color: #1d4ed8; }
-        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        .back-link { display: inline-block; margin-top: 20px; color: #64748b; text-decoration: none; text-align: center; width: 100%; }
-        #message { margin-top: 15px; font-weight: bold; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>➕ Enrôlement Intelligent (5 Captures)</h1>
-        
-        <div class="form-group">
-            <label for="name">Nom complet de la personne :</label>
-            <input type="text" id="name" required placeholder="Ex: Jean Kouadio">
-        </div>
+{% extends "base.html" %}
+{% block title %}Ajouter une personne — FaceGuard{% endblock %}
+{% block nav_register %}active{% endblock %}
 
-        <div class="form-group">
-            <label>Flux de la caméra :</label>
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Enrôlement d'une personne</h1>
+        <p class="page-sub">5 captures automatiques suffisent pour indexer un nouveau profil</p>
+    </div>
+</header>
+
+<div class="enroll-layout">
+    <div class="card enroll-card">
+        <label class="form-field">
+            <span class="form-label">Nom complet</span>
+            <input type="text" id="name" placeholder="ex : Jean Kouadio" required>
+        </label>
+
+        <div class="form-field">
+            <span class="form-label">Flux de la caméra</span>
             <div class="camera-box">
-                <video id="video" autoplay playsinline></video>
+                <video id="video" autoplay playsinline muted></video>
+                <span class="camera-placeholder" id="camera-placeholder">Activation de la caméra...</span>
+                <span class="corner corner-tl"></span>
+                <span class="corner corner-tr"></span>
+                <span class="corner corner-bl"></span>
+                <span class="corner corner-br"></span>
+                <button type="button" id="switch-camera" class="camera-switch-btn" title="Changer de caméra">⟳</button>
                 <canvas id="canvas" style="display:none;"></canvas>
             </div>
-            <button type="button" id="startBtn" class="btn">🚀 Lancer les 5 captures automatiques</button>
         </div>
 
-        <p id="message"></p>
-        <a href="/" class="back-link">← Retour au Dashboard</a>
+        <div class="progress-track" id="progress-track" style="display:none;">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <button type="button" id="startBtn" class="btn btn-primary btn-block">
+            🚀 Lancer les 5 captures automatiques
+        </button>
+
+        <p id="message" class="enroll-message"></p>
     </div>
 
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const startBtn = document.getElementById('startBtn');
-        const nameInput = document.getElementById('name');
-        const message = document.getElementById('message');
+    <div class="card thumbs-card">
+        <span class="form-label">Captures</span>
+        <div class="thumbs-grid" id="thumbs-grid">
+            {% for i in range(5) %}
+            <div class="thumb-slot" id="slot-{{ i }}">
+                <span class="thumb-slot-number">{{ i + 1 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="form-hint">Chaque vignette se remplit au fur et à mesure des captures.</p>
+    </div>
+</div>
 
-        // Allumage de la webcam
-        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                message.style.color = "red";
-                message.innerText = "Erreur d'accès à la webcam : " + err.message;
-            });
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const startBtn = document.getElementById('startBtn');
+const nameInput = document.getElementById('name');
+const message = document.getElementById('message');
+const placeholder = document.getElementById('camera-placeholder');
+const switchCameraBtn = document.getElementById('switch-camera');
+const progressTrack = document.getElementById('progress-track');
+const progressFill = document.getElementById('progress-fill');
 
-        startBtn.addEventListener('click', async () => {
-            const name = nameInput.value.trim();
-            if (!name) {
-                alert("Veuillez saisir un nom complet avant de lancer les captures.");
-                nameInput.focus();
-                return;
-            }
+let stream = null;
+let facingMode = "user";
+const TOTAL_CAPTURES = 5;
 
-            startBtn.setAttribute('disabled', 'true');
-            const blobs = [];
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+async function startCamera() {
+    try {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode, width: 640, height: 480 } });
+        video.srcObject = stream;
+        placeholder.style.display = "none";
+    } catch (err) {
+        placeholder.style.display = "block";
+        placeholder.textContent = "Erreur d'accès à la caméra : " + err.message;
+        message.className = "enroll-message message-error";
+        message.textContent = "Vérifiez que la caméra est autorisée pour ce site.";
+    }
+}
 
-            // Séquence de 5 captures espacées de 800 millisecondes
-            for (let i = 1; i <= 5; i++) {
-                message.style.color = "#d97706";
-                message.innerText = `📸 Capture ${i} sur 5 en cours... (Bougez légèrement)`;
-                
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                await new Promise(resolve => {
-                    canvas.toBlob((blob) => {
-                        blobs.push(blob);
-                        setTimeout(resolve, 800); // Pause de 800ms entre chaque photo
-                    }, 'image/jpeg', 0.9);
-                });
-            }
+switchCameraBtn.addEventListener('click', () => {
+    facingMode = facingMode === "user" ? "environment" : "user";
+    startCamera();
+});
 
-            message.innerText = "Envoi des 5 captures et extraction des embeddings par l'IA...";
+startCamera();
 
-            const formData = new FormData();
-            formData.append('name', name);
-            blobs.forEach((blob, index) => {
-                formData.append('files', blob, `capture_${index}.jpg`);
-            });
+startBtn.addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    if (!name) {
+        message.className = "enroll-message message-error";
+        message.textContent = "Veuillez saisir un nom complet avant de lancer les captures.";
+        nameInput.focus();
+        return;
+    }
+    if (!stream) {
+        message.className = "enroll-message message-error";
+        message.textContent = "La caméra n'est pas active.";
+        return;
+    }
 
-            try {
-                const response = await registerUserAPI(formData);
-                message.style.color = "green";
-                message.innerText = response.message;
-                nameInput.value = "";
-            } catch (err) {
-                message.style.color = "red";
-                message.innerText = "Erreur : " + err.message;
-            } finally {
-                startBtn.removeAttribute('disabled');
-            }
+    startBtn.setAttribute('disabled', 'true');
+    nameInput.setAttribute('disabled', 'true');
+    progressTrack.style.display = "block";
+
+    document.querySelectorAll('.thumb-slot').forEach(slot => {
+        slot.classList.remove('thumb-filled');
+        slot.style.backgroundImage = "";
+    });
+
+    const blobs = [];
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    for (let i = 0; i < TOTAL_CAPTURES; i++) {
+        message.className = "enroll-message message-progress";
+        message.textContent = `📸 Capture ${i + 1} sur ${TOTAL_CAPTURES} en cours... (bougez légèrement la tête)`;
+        progressFill.style.width = `${((i) / TOTAL_CAPTURES) * 100}%`;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        const slot = document.getElementById(`slot-${i}`);
+        slot.style.backgroundImage = `url(${dataUrl})`;
+        slot.classList.add('thumb-filled');
+
+        await new Promise(resolve => {
+            canvas.toBlob((blob) => {
+                blobs.push(blob);
+                progressFill.style.width = `${((i + 1) / TOTAL_CAPTURES) * 100}%`;
+                setTimeout(resolve, 800);
+            }, 'image/jpeg', 0.9);
         });
+    }
 
-        async function registerUserAPI(formData) {
-            const response = await fetch('/register-user', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.detail || "Erreur serveur");
-            return result;
-        }
-    </script>
-</body>
-</html>
+    message.className = "enroll-message message-progress";
+    message.textContent = "Envoi des captures et extraction des embeddings par l'IA...";
+
+    const formData = new FormData();
+    formData.append('name', name);
+    blobs.forEach((blob, index) => {
+        formData.append('files', blob, `capture_${index}.jpg`);
+    });
+
+    try {
+        const response = await registerUserAPI(formData);
+        message.className = "enroll-message message-success";
+        message.textContent = "✓ " + response.message;
+        nameInput.value = "";
+        nameInput.removeAttribute('disabled');
+    } catch (err) {
+        message.className = "enroll-message message-error";
+        message.textContent = "Erreur : " + err.message;
+        nameInput.removeAttribute('disabled');
+    } finally {
+        startBtn.removeAttribute('disabled');
+        progressTrack.style.display = "none";
+    }
+});
+
+async function registerUserAPI(formData) {
+    const response = await fetch('/register-user', { method: 'POST', body: formData });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || "Erreur serveur");
+    return result;
+}
+</script>
+{% endblock %}

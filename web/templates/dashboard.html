@@ -1,116 +1,99 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Contrôle d'Accès IA</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 40px;
-            color: #334155;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        h1 { margin: 0; color: #1e293b; font-size: 24px; }
-        .btn {
-            background-color: #2563eb;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-            transition: background 0.2s;
-        }
-        .btn:hover { background-color: #1d4ed8; }
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-        th, td {
-            padding: 15px 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        th {
-            background-color: #f1f5f9;
-            font-weight: 600;
-            color: #475569;
-        }
-        tr:hover { background-color: #f8fafc; }
-        .badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-vivant { background-color: #dcfce7; color: #166534; }
-        .badge-spoof { background-color: #fee2e2; color: #991b1b; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>📊 Historique des Pointages (Supabase)</h1>
-            <a href="/scanner" class="btn">📷 Ouvrir le Scanner Live</a>
-	   <a href="/register" class="btn" style="background-color: #10b981; margin-right: 10px;">➕ Ajouter une personne</a>
-        </header>
+{% extends "base.html" %}
+{% block title %}Tableau de bord — FaceGuard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
 
-        <div class="card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Utilisateur</th>
-                        <th>Statut Sécurité</th>
-                        <th>Score de Similarité</th>
-                        <th>Horodatage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if logs %}
-                        {% for log in logs %}
-                        <tr>
-                            <td>#{{ log.id }}</td>
-                            <td><strong>{{ log.user_name }}</strong></td>
-                            <td>
-                                {% if "VIVANT" in log.liveness_status %}
-                                    <span class="badge badge-vivant">{{ log.liveness_status }}</span>
-                                {% else %}
-                                    <span class="badge badge-spoof">{{ log.liveness_status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ "%.2f"|format(log.confidence_score) }}</td>
-                            <td>{{ log.timestamp }}</td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                Aucun pointage enregistré pour le moment. Lancez le scanner pour tester !
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Historique des pointages</h1>
+        <p class="page-sub">Journal des reconnaissances — source Supabase</p>
     </div>
-</body>
-</html>
+    <div class="header-actions">
+        <a href="/register" class="btn btn-secondary">+ Ajouter une personne</a>
+        <a href="/scanner" class="btn btn-primary">◎ Ouvrir le scanner live</a>
+    </div>
+</header>
+
+{% set total = logs|length %}
+{% set unique_users = logs|map(attribute='user_name')|unique|list|length if logs else 0 %}
+{% set ns = namespace(spoof_count=0) %}
+{% for log in logs %}
+    {% if "VIVANT" not in log.liveness_status %}
+        {% set ns.spoof_count = ns.spoof_count + 1 %}
+    {% endif %}
+{% endfor %}
+
+<div class="stats-row">
+    <div class="stat-card">
+        <span class="stat-label">Pointages totaux</span>
+        <span class="stat-value">{{ total }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Personnes distinctes</span>
+        <span class="stat-value">{{ unique_users }}</span>
+    </div>
+    <div class="stat-card {% if ns.spoof_count > 0 %}stat-card-alert{% endif %}">
+        <span class="stat-label">Tentatives suspectes</span>
+        <span class="stat-value">{{ ns.spoof_count }}</span>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-toolbar">
+        <input type="text" id="search-input" placeholder="Rechercher un nom..." class="search-input">
+    </div>
+    <div class="table-wrap">
+        <table id="logs-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Utilisateur</th>
+                    <th>Statut sécurité</th>
+                    <th>Similarité</th>
+                    <th>Horodatage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if logs %}
+                    {% for log in logs %}
+                    <tr data-name="{{ log.user_name|lower }}">
+                        <td class="cell-mono">#{{ log.id }}</td>
+                        <td class="cell-name">{{ log.user_name }}</td>
+                        <td>
+                            {% if "VIVANT" in log.liveness_status %}
+                                <span class="badge badge-ok">{{ log.liveness_status }}</span>
+                            {% else %}
+                                <span class="badge badge-alert">{{ log.liveness_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: {{ (log.confidence_score * 100)|round(0) }}%;"></div>
+                                <span class="score-text">{{ "%.2f"|format(log.confidence_score) }}</span>
+                            </div>
+                        </td>
+                        <td class="cell-mono cell-muted">{{ log.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="empty-row">
+                            Aucun pointage enregistré pour le moment. Lancez le scanner pour tester !
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const searchInput = document.getElementById("search-input");
+searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    document.querySelectorAll("#logs-table tbody tr[data-name]").forEach(row => {
+        row.style.display = row.dataset.name.includes(q) ? "" : "none";
+    });
+});
+</script>
+{% endblock %}

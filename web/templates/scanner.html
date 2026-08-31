@@ -1,57 +1,42 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner IA - Contrôle d'accès</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .camera-container {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            background-color: #000;
-        }
-        /* On superpose exactement le canvas (dessins IA) sur la vidéo */
-        #videoElement, #overlayCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 640px;
-            height: 480px;
-        }
-        #overlayCanvas {
-            z-index: 10;
-        }
-        #status {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #333;
-        }
-    </style>
-</head>
-<body>
-    <h1>Terminal de Pointage IA</h1>
-    
-    <div class="camera-container">
-        <video id="videoElement" autoplay playsinline></video>
-        <canvas id="overlayCanvas" width="640" height="480"></canvas>
-    </div>
-    
-    <p id="status">Initialisation de la caméra...</p>
 
-    <!-- Chargement du script qui gère les WebSockets -->
-    <script src="/static/camera.js"></script>
-</body>
-</html>
+
+
+
+{% extends "base.html" %}
+{% block title %}Scanner live — FaceGuard{% endblock %}
+{% block nav_scanner %}active{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <h1>Terminal de pointage IA</h1>
+        <p class="page-sub">Scanner de reconnaissance faciale en temps réel</p>
+    </div>
+    <a href="/" class="btn btn-secondary">← Retour au tableau de bord</a>
+</header>
+
+<div class="scanner-layout">
+    <div class="card scanner-card">
+        <div class="camera-container" id="camera-container">
+            <!-- IDs, dimensions et positionnement inchangés : camera.js en dépend -->
+            <video id="videoElement" autoplay playsinline muted></video>
+            <canvas id="overlayCanvas" width="640" height="480"></canvas>
+
+            <!-- Habillage purement visuel, sans incidence sur les coordonnées de camera.js -->
+            <span class="corner corner-tl"></span>
+            <span class="corner corner-tr"></span>
+            <span class="corner corner-bl"></span>
+            <span class="corner corner-br"></span>
+            <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+        </div>
+
+        <div class="status-panel">
+            <span class="status-label">Statut :</span>
+            <p id="status" class="status-text">Initialisation de la caméra...</p>
+        </div>
+    </div>
+</div>
+
+<script src="/static/camera.js?v=2
+"></script>
+{% endblock %}

@@ -74,12 +74,14 @@ class FaceRecognitionEngine:
             centroid = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
             name, best_sim = self._faiss_knn_predict(face.normed_embedding)
             ratio = self._calculate_3d_ratio(face.kps)
-            raw_results.append((centroid, (int(x1), int(y1), int(x2), int(y2)), name, best_sim, ratio))
+            # face.kps : 5 points [Œil G, Œil D, Nez, Bouche G, Bouche D], en coordonnées
+            # de la frame originale (même repère que face.bbox, pas besoin de mise à l'échelle).
+            raw_results.append((centroid, (int(x1), int(y1), int(x2), int(y2)), name, best_sim, ratio, face.kps))
 
         matched_track_ids = set()
         final_results = []
 
-        for centroid, box, name, sim, ratio in raw_results:
+        for centroid, box, name, sim, ratio, kps in raw_results:
             best_track_idx = None
             best_dist = self.MAX_CENTROID_DIST
             
@@ -128,7 +130,9 @@ class FaceRecognitionEngine:
                 "similarity": float(sim),
                 "liveness": str(liveness_status),
                 "is_real": bool(is_real),
-                "box": [int(box[0]), int(box[1]), int(box[2]), int(box[3])]
+                "box": [int(box[0]), int(box[1]), int(box[2]), int(box[3])],
+                # .tolist() convertit déjà les float32 numpy en float Python natifs -> JSON-safe
+                "kps": kps.tolist(),
             })
 
         self.tracks = [t for i, t in enumerate(self.tracks) if i in matched_track_ids]

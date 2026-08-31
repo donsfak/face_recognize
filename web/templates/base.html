@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Plateforme de Reconnaissance Faciale{% endblock %}</title>
+<title>{% block title %}FaceGuard — Contrôle d'accès IA{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="app-shell">
@@ -15,15 +15,18 @@
             <span class="brand-mark">◈</span>
             <div class="brand-text">
                 <span class="brand-name">FaceGuard</span>
-                <span class="brand-sub">Orange Digital Center</span>
+                <span class="brand-sub">Contrôle d'accès IA</span>
             </div>
         </div>
         <div class="nav-links">
-            <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <a href="/" class="nav-link {% block nav_dashboard %}{% endblock %}">
                 <span class="nav-icon">▣</span> Tableau de bord
             </a>
-            <a href="{{ url_for('people_list') }}" class="nav-link {% if request.endpoint in ['people_list', 'people_add'] %}active{% endif %}">
-                <span class="nav-icon">◉</span> Personnes
+            <a href="/scanner" class="nav-link {% block nav_scanner %}{% endblock %}">
+                <span class="nav-icon">◎</span> Scanner live
+            </a>
+            <a href="/register" class="nav-link {% block nav_register %}{% endblock %}">
+                <span class="nav-icon">◉</span> Ajouter une personne
             </a>
         </div>
         <div class="sidebar-footer">
@@ -32,16 +35,6 @@
     </nav>
 
     <main class="content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-stack">
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
         {% block content %}{% endblock %}
     </main>
 </div>
